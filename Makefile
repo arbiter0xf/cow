@@ -10,7 +10,8 @@ DEP_SERVER := $(SRC_SERVER:.c=.d)
 # Produce header dependency files to be included below
 CFLAGS := -MMD
 COMPILER := gcc
-# LDFLAGS :=
+LDFLAGS_SERVER := -lssl -lcrypto
+# LDFLAGS_CLIENT :=
 
 EXECUTABLE_CLIENT := cow
 EXECUTABLE_SERVER := cows
@@ -19,11 +20,10 @@ EXECUTABLE_SERVER := cows
 
 $(EXECUTABLE_CLIENT): $(OBJ_CLIENT)
 	$(COMPILER) -Wall -o $@ $^
-#	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS)
+#	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_CLIENT)
 
 $(EXECUTABLE_SERVER): $(OBJ_SERVER)
-	$(COMPILER) -Wall -o $@ $^
-#	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS)
+	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_SERVER)
 
 -include $(DEP)
 
@@ -32,5 +32,5 @@ clean:
 
 deploy:
 	mkdir run_here || true
-	mv cow run_here/
-	mv cows run_here/
+	mv cow run_here/ || true
+	mv cows run_here/ || true
