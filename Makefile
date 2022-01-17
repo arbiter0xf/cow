@@ -11,7 +11,7 @@ DEP_SERVER := $(SRC_SERVER:.c=.d)
 CFLAGS := -MMD
 COMPILER := gcc
 LDFLAGS_SERVER := -lssl -lcrypto
-# LDFLAGS_CLIENT :=
+LDFLAGS_CLIENT := -lssl -lcrypto
 
 EXECUTABLE_CLIENT := cow
 EXECUTABLE_SERVER := cows
@@ -19,8 +19,7 @@ EXECUTABLE_SERVER := cows
 .PHONY: clean deploy
 
 $(EXECUTABLE_CLIENT): $(OBJ_CLIENT)
-	$(COMPILER) -Wall -o $@ $^
-#	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_CLIENT)
+	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_CLIENT)
 
 $(EXECUTABLE_SERVER): $(OBJ_SERVER)
 	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_SERVER)
