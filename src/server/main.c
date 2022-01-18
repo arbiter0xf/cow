@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/opensslv.h>
 
 #include "config.h"
 
@@ -38,6 +39,13 @@ int main(void)
 	BIO *accept_bio = 0;
 	int ret = 0;
 
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	SSL_library_init();
+#else
+	OPENSSL_init_ssl(0, NULL);
+#endif
+
 	method = TLS_server_method();
 	ctx = SSL_CTX_new(method);
 	if (!ctx) {
@@ -58,7 +66,6 @@ int main(void)
 		return 1;
 	}
 
-	// ssl_bio = BIO_new_ssl(ctx, 0 /* set as server */);
 	ssl_bio = BIO_new(BIO_f_ssl());
 	if (0 == ssl_bio) {
 		perror("Failed to allocate new SSL BIO");
@@ -67,7 +74,6 @@ int main(void)
 	}
 
 	accept_bio = BIO_new(BIO_s_accept());
-	// accept_bio = BIO_new_accept("2424");
 	if (0 == ssl_bio) {
 		perror("Failed to allocate new accept BIO");
 		ERR_print_errors_fp(stderr);
@@ -75,7 +81,7 @@ int main(void)
 	}
 
 	// https://linux.die.net/man/3/bio_set_close
-	ret = BIO_set_ssl(ssl_bio, ssl, BIO_NOCLOSE);
+	ret = BIO_set_ssl(ssl_bio, ssl, BIO_CLOSE);
 	if (ret <= 0) {
 		perror("Failed to set SSL to SSL BIO");
 		ERR_print_errors_fp(stderr);
@@ -130,9 +136,23 @@ int main(void)
 		return 1;
 	}
 
+	/* Support only one connection */
+	ssl_bio = BIO_pop(accept_bio);
+	BIO_free_all(accept_bio);
+	accept_bio = 0;
+
+	ret = BIO_do_handshake(ssl_bio);
+	if (ret <= 0) {
+		perror("Failed to do SSL handshake");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+
 	printf("Exiting\n");
-	BIO_free_all(accept_bio); // Free chain set by BIO_set_accept_bios()
-	SSL_free(ssl);
+	if (0 != accept_bio) {
+		// Free chain set by BIO_set_accept_bios()
+		BIO_free_all(accept_bio);
+	}
 	SSL_CTX_free(ctx);
 
 	return 0;
