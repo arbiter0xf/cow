@@ -1,9 +1,18 @@
 #include <stdio.h>
+#include <string.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 
 #include "config.h"
+
+#define CONNECTION_DATA_LEN 1024
+
+void process_received_data(void* connection_data)
+{
+	printf("Received connection data: %s\n", (char*) connection_data);
+	fflush(stdout);
+}
 
 int load_certificate_and_private_key(SSL_CTX* ctx)
 {
@@ -39,10 +48,12 @@ int main(void)
 	const SSL_METHOD* method;
 	SSL* ssl = 0;
 	SSL_CTX* ctx;
-	BIO *ssl_bio = 0;
-	BIO *accept_bio = 0;
+	BIO* tmp_bio = 0;
+	BIO* ssl_bio = 0;
+	BIO* accept_bio = 0;
+	char connection_data[CONNECTION_DATA_LEN];
 	int ret = 0;
-
+	int data_moved = 0;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_library_init();
@@ -131,25 +142,50 @@ int main(void)
 			BIO_get_accept_name(accept_bio),
 			BIO_get_accept_port(accept_bio));
 
-	printf("Waiting for connection\n");
-	fflush(stdout);
-	ret = BIO_do_accept(accept_bio);
-	if (ret <= 0) {
-		perror("Failed to create and bind accept socket");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
+	while (1) {
+		printf("Waiting for connection\n");
+		fflush(stdout);
+		ret = BIO_do_accept(accept_bio);
+		if (ret <= 0) {
+			perror("Failed to accept connection");
+			ERR_print_errors_fp(stderr);
+			continue;
+		}
 
-	/* Support only one connection */
-	ssl_bio = BIO_pop(accept_bio);
-	BIO_free_all(accept_bio);
-	accept_bio = 0;
+		ret = BIO_do_handshake(accept_bio);
+		if (ret <= 0) {
+			perror("Failed to do SSL handshake");
+			ERR_print_errors_fp(stderr);
+			continue;
+		}
 
-	ret = BIO_do_handshake(ssl_bio);
-	if (ret <= 0) {
-		perror("Failed to do SSL handshake");
-		ERR_print_errors_fp(stderr);
-		return 1;
+		bzero(connection_data, CONNECTION_DATA_LEN);
+		printf("debug: Reading %d bytes\n", CONNECTION_DATA_LEN);
+		data_moved = BIO_read(
+				accept_bio,
+				connection_data,
+				CONNECTION_DATA_LEN);
+
+		printf("debug: Read %d bytes\n", data_moved);
+		if (data_moved <= 0) {
+			// No data successfully read
+			tmp_bio = BIO_pop(accept_bio);
+			BIO_free_all(tmp_bio);
+			continue;
+		}
+
+		data_moved = BIO_read(
+				accept_bio,
+				connection_data,
+				CONNECTION_DATA_LEN);
+		if (data_moved > 0) {
+			printf("Client is sending more data than expected\n");
+		}
+
+		tmp_bio = BIO_pop(accept_bio);
+		BIO_free_all(tmp_bio);
+
+		process_received_data(connection_data);
 	}
 
 	printf("Exiting\n");

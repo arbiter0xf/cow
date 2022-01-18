@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
+#include <openssl/x509v3.h>
 
 #include "config.h"
 
@@ -57,6 +59,15 @@ int main(void)
 	ssl = SSL_new(ctx);
 	SSL_set_connect_state(ssl);
 
+	/* Setup hostname validation */
+	SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_WILDCARDS);
+	ret = SSL_set1_host(ssl, CFG_SERVER_HOSTNAME);
+	if (0 == ret) {
+		perror("Failed to set expected DNS hostname");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+
 	ssl_bio = BIO_new(BIO_f_ssl());
 	BIO_set_ssl(ssl_bio, ssl, BIO_CLOSE);
 
@@ -89,6 +100,7 @@ int main(void)
 	server_certificate = SSL_get_peer_certificate(ssl);
 	if (0 == server_certificate) {
 		perror("Failed to get certificate from server");
+		ERR_print_errors_fp(stderr);
 		goto fail;
 	}
 
@@ -99,6 +111,16 @@ int main(void)
 		perror("indicate changed implementation or a bug.");
 		goto fail;
 	}
+
+	printf("Connected\n");
+
+	char* test_connection_data = "test test";
+	int data_moved = 0;
+	int len = strlen(test_connection_data);
+
+	printf("Sending test data\n");
+	data_moved = BIO_write(connect_bio, test_connection_data, len);
+	printf("Successfully wrote %d bytes\n", data_moved);
 
 	printf("Exiting\n");
 	BIO_ssl_shutdown(connect_bio);
