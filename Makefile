@@ -7,6 +7,9 @@ OBJ_SERVER := $(SRC_SERVER:.c=.o)
 DEP_CLIENT := $(SRC_CLIENT:.c=.d)
 DEP_SERVER := $(SRC_SERVER:.c=.d)
 
+OBJ := $(OBJ_CLIENT) $(OBJ_SERVER)
+DEP := $(DEP_CLIENT) $(DEP_SERVER)
+
 # Produce header dependency files to be included below
 CFLAGS := -MMD
 COMPILER := gcc
@@ -27,7 +30,7 @@ $(EXECUTABLE_SERVER): $(OBJ_SERVER)
 -include $(DEP)
 
 clean:
-	$(RM) $(OBJ) $(DEP) $(EXECUTABLE)
+	$(RM) $(OBJ) $(DEP) $(EXECUTABLE_CLIENT) $(EXECUTABLE_SERVER)
 
 deploy:
 	mkdir run_here || true
