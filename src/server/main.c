@@ -9,13 +9,17 @@ int load_certificate_and_private_key(SSL_CTX* ctx)
 {
 	int ret = 0;
 
+	printf("Loading certificate: %s\n", CFG_CERT_NAME);
+	fflush(stdout);
 	ret = SSL_CTX_use_certificate_file(ctx, CFG_CERT_NAME, SSL_FILETYPE_PEM);
 	if (ret <= 0) {
 		ERR_print_errors_fp(stderr);
 		return 1;
 	}
 
-	ret = SSL_CTX_use_PrivateKey_file(ctx, CFG_PRIVKEY_PATH, SSL_FILETYPE_PEM);
+	printf("Loading private key: %s\n", CFG_PRIVKEY_NAME);
+	fflush(stdout);
+	ret = SSL_CTX_use_PrivateKey_file(ctx, CFG_PRIVKEY_NAME, SSL_FILETYPE_PEM);
 	if (ret <= 0) {
 		ERR_print_errors_fp(stderr);
 		return 1;
