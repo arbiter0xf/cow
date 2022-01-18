@@ -33,3 +33,5 @@ deploy:
 	mkdir run_here || true
 	mv cow run_here/ || true
 	mv cows run_here/ || true
+	mv scripts/*.key run_here/ || true
+	mv scripts/*.crt run_here/ || true
