@@ -5,7 +5,25 @@
 
 #include "config.h"
 
-int main(void) {
+static int cert_verification_cb(int preverify_ok, X509_STORE_CTX* ctx)
+{
+	int err;
+
+	if (preverify_ok <= 0) {
+		err = X509_STORE_CTX_get_error(ctx);
+		fprintf(
+			stderr,
+			"Server certificate verification failed: (%d) %s\n",
+			err,
+			X509_verify_cert_error_string(err));
+		fflush(stderr);
+	}
+
+	return preverify_ok;
+}
+
+int main(void)
+{
 	const SSL_METHOD* method = 0;
 	BIO* connect_bio = 0;
 	BIO* ssl_bio = 0;
@@ -28,7 +46,7 @@ int main(void) {
 		return 1;
 	}
 
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, cert_verification_cb);
 	ret = SSL_CTX_load_verify_locations(ctx, CFG_CA_FILE, NULL);
 	if (ret <= 0) {
 		perror("Failed to load CA file locations");
