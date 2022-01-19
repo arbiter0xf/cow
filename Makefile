@@ -1,17 +1,20 @@
 SRC_CLIENT := $(wildcard src/client/*.c)
 SRC_SERVER := $(wildcard src/server/*.c)
+SRC_COMMON := $(wildcard src/common/*.c)
 
 OBJ_CLIENT := $(SRC_CLIENT:.c=.o)
 OBJ_SERVER := $(SRC_SERVER:.c=.o)
+OBJ_COMMON := $(SRC_COMMON:.c=.o)
 
 DEP_CLIENT := $(SRC_CLIENT:.c=.d)
 DEP_SERVER := $(SRC_SERVER:.c=.d)
+DEP_COMMON := $(SRC_COMMON:.c=.d)
 
-OBJ := $(OBJ_CLIENT) $(OBJ_SERVER)
-DEP := $(DEP_CLIENT) $(DEP_SERVER)
+OBJ := $(OBJ_CLIENT) $(OBJ_SERVER) $(OBJ_COMMON)
+DEP := $(DEP_CLIENT) $(DEP_SERVER) $(DEP_COMMON)
 
-# Produce header dependency files to be included below
-CFLAGS := -MMD
+# -MMD -> Produce header dependency files to be included below
+CFLAGS := -MMD -Iinclude/
 COMPILER := gcc
 LDFLAGS_SERVER := -lssl -lcrypto
 LDFLAGS_CLIENT := -lssl -lcrypto
@@ -21,10 +24,10 @@ EXECUTABLE_SERVER := cows
 
 .PHONY: clean deploy
 
-$(EXECUTABLE_CLIENT): $(OBJ_CLIENT)
+$(EXECUTABLE_CLIENT): $(OBJ_CLIENT) $(OBJ_COMMON)
 	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_CLIENT)
 
-$(EXECUTABLE_SERVER): $(OBJ_SERVER)
+$(EXECUTABLE_SERVER): $(OBJ_SERVER) $(OBJ_COMMON)
 	$(COMPILER) -Wall -o $@ $^ $(LDFLAGS_SERVER)
 
 -include $(DEP)

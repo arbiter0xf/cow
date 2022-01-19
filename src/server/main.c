@@ -4,13 +4,12 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 
-#include "config.h"
+#include "config_server.h"
+#include "formulate_item.h"
 
-#define CONNECTION_DATA_LEN 1024
-
-void process_received_data(void* connection_data)
+void process_received_item(struct item* received_item)
 {
-	printf("Received connection data: %s\n", (char*) connection_data);
+	printf("Received connection data: %s\n", received_item->data);
 	fflush(stdout);
 }
 
@@ -51,7 +50,7 @@ int main(void)
 	BIO* tmp_bio = 0;
 	BIO* ssl_bio = 0;
 	BIO* accept_bio = 0;
-	char connection_data[CONNECTION_DATA_LEN];
+	struct item received_item;
 	int ret = 0;
 	int data_moved = 0;
 
@@ -159,12 +158,13 @@ int main(void)
 			continue;
 		}
 
-		bzero(connection_data, CONNECTION_DATA_LEN);
-		printf("debug: Reading %d bytes\n", CONNECTION_DATA_LEN);
+		item_initialize(&received_item);
+		printf("debug: Reading %d bytes\n", ITEM_SIZE);
 		data_moved = BIO_read(
 				accept_bio,
-				connection_data,
-				CONNECTION_DATA_LEN);
+				received_item.data,
+				ITEM_SIZE);
+		item_count_unused_bytes(received_item);
 
 		printf("debug: Read %d bytes\n", data_moved);
 		if (data_moved <= 0) {
@@ -174,10 +174,12 @@ int main(void)
 			continue;
 		}
 
+		// TODO respond here, instead of reading more. Currently
+		// overwriting already read data.
 		data_moved = BIO_read(
 				accept_bio,
-				connection_data,
-				CONNECTION_DATA_LEN);
+				received_item.data,
+				ITEM_SIZE);
 		if (data_moved > 0) {
 			printf("Client is sending more data than expected\n");
 		}
@@ -185,7 +187,7 @@ int main(void)
 		tmp_bio = BIO_pop(accept_bio);
 		BIO_free_all(tmp_bio);
 
-		process_received_data(connection_data);
+		process_received_item(&received_item);
 	}
 
 	printf("Exiting\n");

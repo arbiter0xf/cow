@@ -7,15 +7,11 @@
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
 
-#include "config.h"
+#include "config_client.h"
+#include "formulate_item_request.h"
+#include "user_identifier.h"
 
-#define USER_ID_FILE_NAME "user_id.txt"
 #define RANDOM_BYTES_TO_READ 32
-
-// User identifier is expected to be 28 characters long
-#define USER_IDENTIFIER_SIZE 29
-
-char user_identifier[USER_IDENTIFIER_SIZE] = {0};
 
 static int cert_verification_cb(int preverify_ok, X509_STORE_CTX* ctx)
 {
@@ -98,6 +94,7 @@ static int load_user_identifier(void)
 {
 	FILE* id_file = 0;
 	const int items_to_read = 1;
+	char user_identifier[USER_IDENTIFIER_SIZE] = {0};
 	int data_read = 0;
 	int err = 0;
 
@@ -127,6 +124,9 @@ static int load_user_identifier(void)
 	}
 	user_identifier[sizeof(user_identifier) - 1] = '\0';
 
+	set_user_identifier(user_identifier);
+	printf("debug: Did load user identifier: %s\n", user_identifier);
+
 	fclose(id_file);
 
 	return 0;
@@ -140,6 +140,8 @@ int main(void)
 	SSL* ssl = 0;
 	SSL_CTX* ctx = 0;
 	X509* server_certificate = 0;
+	struct item item_to_send = {0};
+	int data_moved = 0;
 	int ret = -1;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -165,7 +167,6 @@ int main(void)
 		perror("Failed to load user identifier");
 		return 1;
 	}
-	printf("debug: Did load user identifier: %s\n", user_identifier);
 
 	method = TLS_client_method();
 	ctx = SSL_CTX_new(method);
@@ -241,14 +242,21 @@ int main(void)
 
 	printf("Connected\n");
 
-	char* test_connection_data = "test test";
-	int data_moved = 0;
-	int len = strlen(test_connection_data);
+	ret = formulate_item_request_test(&item_to_send);
+	if (0 != ret) {
+		perror("Failed to formulate test request");
+		goto fail;
+	}
+	printf("debug: constructed item data: %s\n", item_to_send.data);
 
 	printf("Sending test data\n");
-	data_moved = BIO_write(connect_bio, test_connection_data, len);
-	printf("Successfully wrote %d bytes\n", data_moved);
+	data_moved = BIO_write(
+			connect_bio,
+			item_to_send.data,
+			strlen(item_to_send.data));
+	printf("debug: Successfully wrote %d bytes\n", data_moved);
 
+shutdown:
 	printf("Exiting\n");
 	BIO_ssl_shutdown(connect_bio);
 	BIO_free_all(connect_bio); // Free chain set by BIO_push()
