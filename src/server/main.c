@@ -1,3 +1,4 @@
+#include <netdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <openssl/ssl.h>
@@ -6,6 +7,7 @@
 
 #include "config_server.h"
 #include "formulate_item.h"
+#include "host.h"
 
 void process_received_item(struct item* received_item)
 {
@@ -54,11 +56,32 @@ int main(void)
 	int ret = 0;
 	int data_moved = 0;
 
+	// NI_MAXHOST + ":" + "65535" + "\0"
+	char accept_name[NI_MAXHOST + 7] = {0};
+
+	char accept_host[NI_MAXHOST] = {0};
+	char* accept_port = CFG_ACCEPT_PORT;
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-	SSL_library_init();
+#error OpenSSL version is lower than 1.1.0.
 #else
-	OPENSSL_init_ssl(0, NULL);
+	// Library has initialized itself automatically.
+	// https://wiki.openssl.org/index.php/Library_Initialization
 #endif
+
+	if (0 == strncmp(CFG_ACCEPT_HOST, "auto", 4)) {
+		ret = get_host_of_first_nonloopback_device(accept_host);
+		if (0 != ret) {
+			perror("Failed to autoconfigure accept host");
+			return 1;
+		}
+	} else {
+		strncpy(accept_host, CFG_ACCEPT_HOST, sizeof(accept_host));
+	}
+	strncpy(accept_name, accept_host, NI_MAXHOST);
+	strcat(accept_name, ":");
+	strncat(accept_name, accept_port, 5);
+	accept_name[NI_MAXHOST + 7 - 1] = '\0';
 
 	method = TLS_server_method();
 	ctx = SSL_CTX_new(method);
@@ -109,9 +132,9 @@ int main(void)
 		return 1;
 	}
 
-	ret = BIO_set_accept_name(accept_bio, "localhost:2424");
+	ret = BIO_set_accept_name(accept_bio, accept_name);
 	if (ret <= 0) {
-		perror("Failed to set accept_name");
+		perror("Failed to set name and port for accepting connections");
 		ERR_print_errors_fp(stderr);
 		return 1;
 	}

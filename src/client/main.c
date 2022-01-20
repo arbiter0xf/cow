@@ -145,9 +145,10 @@ int main(void)
 	int ret = -1;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-	SSL_library_init();
+#error OpenSSL version is lower than 1.1.0.
 #else
-	OPENSSL_init_ssl(0, NULL);
+	// Library has initialized itself automatically.
+	// https://wiki.openssl.org/index.php/Library_Initialization
 #endif
 
 	ret = initialize_random_number_generation();
