@@ -164,7 +164,7 @@ int main(void)
 				accept_bio,
 				received_item.data,
 				ITEM_SIZE);
-		item_count_unused_bytes(received_item);
+		item_count_unused_bytes(&received_item);
 
 		printf("debug: Read %d bytes\n", data_moved);
 		if (data_moved <= 0) {
