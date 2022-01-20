@@ -44,125 +44,12 @@ int load_certificate_and_private_key(SSL_CTX* ctx)
 	return 0;
 }
 
-int main(void)
+int serve_connecting_clients(BIO* accept_bio)
 {
-	const SSL_METHOD* method;
-	SSL* ssl = 0;
-	SSL_CTX* ctx;
 	BIO* tmp_bio = 0;
-	BIO* ssl_bio = 0;
-	BIO* accept_bio = 0;
 	struct item received_item;
 	int ret = 0;
 	int data_moved = 0;
-
-	// NI_MAXHOST + ":" + "65535" + "\0"
-	char accept_name[NI_MAXHOST + 7] = {0};
-
-	char accept_host[NI_MAXHOST] = {0};
-	char* accept_port = CFG_ACCEPT_PORT;
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#error OpenSSL version is lower than 1.1.0.
-#else
-	// Library has initialized itself automatically.
-	// https://wiki.openssl.org/index.php/Library_Initialization
-#endif
-
-	if (0 == strncmp(CFG_ACCEPT_HOST, "auto", 4)) {
-		ret = get_host_of_first_nonloopback_device(accept_host);
-		if (0 != ret) {
-			perror("Failed to autoconfigure accept host");
-			return 1;
-		}
-	} else {
-		strncpy(accept_host, CFG_ACCEPT_HOST, sizeof(accept_host));
-	}
-	strncpy(accept_name, accept_host, NI_MAXHOST);
-	strcat(accept_name, ":");
-	strncat(accept_name, accept_port, 5);
-	accept_name[NI_MAXHOST + 7 - 1] = '\0';
-
-	method = TLS_server_method();
-	ctx = SSL_CTX_new(method);
-	if (!ctx) {
-		perror("Could not create SSL context");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = load_certificate_and_private_key(ctx);
-	if (0 != ret) {
-		return 1;
-	}
-
-	ssl = SSL_new(ctx);
-	if (0 == ssl) {
-		perror("Failed to create new SSL structure");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ssl_bio = BIO_new(BIO_f_ssl());
-	if (0 == ssl_bio) {
-		perror("Failed to allocate new SSL BIO");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	accept_bio = BIO_new(BIO_s_accept());
-	if (0 == ssl_bio) {
-		perror("Failed to allocate new accept BIO");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	// https://linux.die.net/man/3/bio_set_close
-	ret = BIO_set_ssl(ssl_bio, ssl, BIO_CLOSE);
-	if (ret <= 0) {
-		perror("Failed to set SSL to SSL BIO");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = BIO_set_ssl_mode(ssl_bio, 0 /* set server mode */);
-	if (ret <= 0) {
-		perror("Failed to set SSL mode");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = BIO_set_accept_name(accept_bio, accept_name);
-	if (ret <= 0) {
-		perror("Failed to set name and port for accepting connections");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = BIO_set_nbio_accept(accept_bio, 0 /* set to blocking mode */);
-	if (ret <= 0) {
-		perror("Failed to set BIO to blocking");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = BIO_set_accept_bios(accept_bio, ssl_bio);
-	if (ret <= 0) {
-		perror("Failed to set SSL BIO to be duplicated"
-				" for each accepted connection");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-
-	ret = BIO_do_accept(accept_bio);
-	if (ret <= 0) {
-		perror("Failed to create and bind accept socket");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-	printf("Bound to address: %s:%s\n",
-			BIO_get_accept_name(accept_bio),
-			BIO_get_accept_port(accept_bio));
 
 	while (1) {
 		printf("Waiting for connection\n");
@@ -213,12 +100,146 @@ int main(void)
 		process_received_item(&received_item);
 	}
 
-	printf("Exiting\n");
-	if (0 != accept_bio) {
-		// Free chain set by BIO_set_accept_bios()
-		BIO_free_all(accept_bio);
+	return 0;
+}
+
+int main(void)
+{
+	const SSL_METHOD* method = 0;
+	SSL* ssl = 0;
+	SSL_CTX* ctx = 0;
+	BIO* ssl_bio = 0;
+	BIO* accept_bio = 0;
+	int do_not_free_ssl = 0;
+	int ret = 0;
+
+	// NI_MAXHOST + ":" + "65535" + "\0"
+	char accept_name[NI_MAXHOST + 7] = {0};
+
+	char accept_host[NI_MAXHOST] = {0};
+	char* accept_port = CFG_ACCEPT_PORT;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#error OpenSSL version is lower than 1.1.0.
+#else
+	// Library has initialized itself automatically.
+	// https://wiki.openssl.org/index.php/Library_Initialization
+#endif
+
+	if (0 == strncmp(CFG_ACCEPT_HOST, "auto", 4)) {
+		ret = get_host_of_first_nonloopback_device(accept_host);
+		if (0 != ret) {
+			perror("Failed to autoconfigure accept host");
+			return 1;
+		}
+	} else {
+		strncpy(accept_host, CFG_ACCEPT_HOST, sizeof(accept_host));
 	}
+	strncpy(accept_name, accept_host, NI_MAXHOST);
+	strcat(accept_name, ":");
+	strncat(accept_name, accept_port, 5);
+	accept_name[NI_MAXHOST + 7 - 1] = '\0';
+
+	method = TLS_server_method();
+	ctx = SSL_CTX_new(method);
+	if (!ctx) {
+		perror("Could not create SSL context");
+		goto fail;
+	}
+
+	ret = load_certificate_and_private_key(ctx);
+	if (0 != ret) {
+		perror("Failed to load certificate and private key");
+		goto fail;
+	}
+
+	ssl = SSL_new(ctx);
+	if (0 == ssl) {
+		perror("Failed to create new SSL structure");
+		goto fail;
+	}
+
+	ssl_bio = BIO_new(BIO_f_ssl());
+	if (0 == ssl_bio) {
+		perror("Failed to allocate new SSL BIO");
+		goto fail;
+	}
+
+	accept_bio = BIO_new(BIO_s_accept());
+	if (0 == ssl_bio) {
+		perror("Failed to allocate new accept BIO");
+		goto fail;
+	}
+
+	// https://linux.die.net/man/3/bio_set_close
+	ret = BIO_set_ssl(ssl_bio, ssl, BIO_CLOSE);
+	if (ret <= 0) {
+		perror("Failed to set SSL to SSL BIO");
+		goto fail;
+	}
+
+	ret = BIO_set_ssl_mode(ssl_bio, 0 /* set server mode */);
+	if (ret <= 0) {
+		perror("Failed to set SSL mode");
+		goto fail;
+	}
+
+	ret = BIO_set_accept_name(accept_bio, accept_name);
+	if (ret <= 0) {
+		perror("Failed to set name and port for accepting connections");
+		goto fail;
+	}
+
+	ret = BIO_set_nbio_accept(accept_bio, 0 /* set to blocking mode */);
+	if (ret <= 0) {
+		perror("Failed to set BIO to blocking");
+		goto fail;
+	}
+
+	ret = BIO_set_accept_bios(accept_bio, ssl_bio);
+	if (ret <= 0) {
+		perror("Failed to set SSL BIO to be duplicated"
+				" for each accepted connection");
+		goto fail;
+	}
+	do_not_free_ssl = 1;
+
+	ret = BIO_do_accept(accept_bio);
+	if (ret <= 0) {
+		perror("Failed to create and bind accept socket");
+		goto fail;
+	}
+	printf("Bound to address: %s:%s\n",
+			BIO_get_accept_name(accept_bio),
+			BIO_get_accept_port(accept_bio));
+
+	ret = serve_connecting_clients(accept_bio);
+	if (0 != ret) {
+		perror("Fatal error while serving clients");
+		goto fail;
+	}
+
+	printf("Exiting\n");
+	// Free chain set by BIO_set_accept_bios()
+	BIO_free_all(accept_bio);
 	SSL_CTX_free(ctx);
 
 	return 0;
+
+fail:
+	ERR_print_errors_fp(stderr);
+
+	if (0 != accept_bio) {
+		BIO_free_all(accept_bio);
+	}
+
+	if (0 != ssl && !do_not_free_ssl) {
+		SSL_free(ssl);
+	}
+
+	if (0 != ctx) {
+		SSL_CTX_free(ctx);
+	}
+
+	return 1;
 }
