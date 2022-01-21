@@ -7,9 +7,9 @@
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
 
-#include "config_client.h"
-#include "formulate_item_request.h"
-#include "user_identifier.h"
+#include "cow_client_config.h"
+#include "cow_formulate_item_request.h"
+#include "cow_user_identifier.h"
 
 #define RANDOM_BYTES_TO_READ 32
 

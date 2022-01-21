@@ -5,9 +5,9 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 
-#include "config_server.h"
-#include "formulate_item.h"
-#include "host.h"
+#include "cow_server_config.h"
+#include "cow_formulate_item.h"
+#include "cow_host.h"
 
 void process_received_item(struct item* received_item)
 {

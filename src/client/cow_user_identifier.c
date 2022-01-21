@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "user_identifier.h"
+#include "cow_user_identifier.h"
 
 /*
  * When acting as a setter, pass_user_identifier must be 0.
