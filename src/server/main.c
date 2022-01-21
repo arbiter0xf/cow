@@ -8,6 +8,9 @@
 #include "cow_server_config.h"
 #include "cow_formulate_item.h"
 #include "cow_host.h"
+#include "cow_signal.h"
+#include "cow_state.h"
+#include "cow_synchronize.h"
 
 void process_received_item(struct item* received_item)
 {
@@ -52,6 +55,11 @@ int serve_connecting_clients(BIO* accept_bio)
 	int data_moved = 0;
 
 	while (1) {
+		if (cow_state_should_stop_get()) {
+			printf("Stopping to serve clients due to state.\n");
+			break;
+		}
+
 		printf("Waiting for connection\n");
 		fflush(stdout);
 		ret = BIO_do_accept(accept_bio);
@@ -111,6 +119,7 @@ int main(void)
 	BIO* ssl_bio = 0;
 	BIO* accept_bio = 0;
 	int do_not_free_ssl = 0;
+	int err = 0;
 	int ret = 0;
 
 	// NI_MAXHOST + ":" + "65535" + "\0"
@@ -126,11 +135,23 @@ int main(void)
 	// https://wiki.openssl.org/index.php/Library_Initialization
 #endif
 
+	ret = cow_locks_init();
+	if (0 != ret) {
+		perror("Failed initialize locks");
+		return 1;
+	}
+
+	ret = install_signal_handler();
+	if (0 != ret) {
+		perror("Failed to install signal handler");
+		goto fail;
+	}
+
 	if (0 == strncmp(CFG_ACCEPT_HOST, "auto", 4)) {
 		ret = get_host_of_first_nonloopback_device(accept_host);
 		if (0 != ret) {
 			perror("Failed to autoconfigure accept host");
-			return 1;
+			goto fail;
 		}
 	} else {
 		strncpy(accept_host, CFG_ACCEPT_HOST, sizeof(accept_host));
@@ -240,6 +261,8 @@ fail:
 	if (0 != ctx) {
 		SSL_CTX_free(ctx);
 	}
+
+	(void) cow_locks_teardown();
 
 	return 1;
 }

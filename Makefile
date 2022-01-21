@@ -16,7 +16,7 @@ DEP := $(DEP_CLIENT) $(DEP_SERVER) $(DEP_COMMON)
 # -MMD -> Produce header dependency files to be included below
 CFLAGS := -MMD -Iinclude/
 COMPILER := gcc
-LDFLAGS_SERVER := -lssl -lcrypto
+LDFLAGS_SERVER := -lssl -lcrypto -lpthread
 LDFLAGS_CLIENT := -lssl -lcrypto
 
 EXECUTABLE_CLIENT := cow
