@@ -31,6 +31,8 @@ static int get_host_name_from_sockaddr(const struct sockaddr* addr, char* out)
 	}
 
 	strncpy(out, host, NI_MAXHOST);
+
+	return 0;
 }
 
 int get_host_of_first_nonloopback_device(char* out)
