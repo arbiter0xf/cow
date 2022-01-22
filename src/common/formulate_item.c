@@ -3,7 +3,7 @@
 
 #include "cow_formulate_item.h"
 
-int item_append(struct item* item, char* new_data)
+int item_append(struct item* item, const char* new_data)
 {
 	if ((item->unused_bytes - strlen(new_data)) < 0) {
 		perror("Not enough space in item when trying to append");
