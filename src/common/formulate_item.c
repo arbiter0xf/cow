@@ -5,8 +5,10 @@
 
 int item_append(struct item* item, const char* new_data)
 {
-	if ((item->unused_bytes - strlen(new_data)) < 0) {
-		perror("Not enough space in item when trying to append");
+	if ((item->unused_bytes - (long long) strlen(new_data)) < 0) {
+		fprintf(
+			stderr,
+			"Not enough space in item when trying to append");
 		return -1;
 	}
 
