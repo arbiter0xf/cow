@@ -15,8 +15,10 @@ int item_append(struct item* item, const char* new_data)
 
 	item->data[ITEM_SIZE - 1] = '\0';
 
+#if DEBUG_ENABLED
 	printf("debug: After appending, item has %d unused bytes\n",
 			item->unused_bytes);
+#endif
 
 	return 0;
 }

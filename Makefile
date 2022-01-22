@@ -18,8 +18,8 @@ DEP := $(DEP_CLIENT) $(DEP_SERVER) $(DEP_COMMON)
 SRC_WITHOUT_MAIN := $(filter-out src/server/main.c,$(filter-out src/client/main.c,$(SRC)))
 
 # -MMD -> Produce header dependency files to be included below
-CFLAGS := -MMD -Iinclude/
-CFLAGS_TEST := -Iinclude/ -Wall
+CFLAGS := -DDEBUG_ENABLED=1 -MMD -Iinclude/
+CFLAGS_TEST := -DDEBUG_ENABLED=0 -Iinclude/ -Wall
 COMPILER := gcc
 LDFLAGS_SERVER := -lssl -lcrypto -lpthread
 LDFLAGS_CLIENT := -lssl -lcrypto

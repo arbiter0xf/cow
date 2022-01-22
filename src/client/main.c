@@ -57,7 +57,9 @@ static int create_user_identifier_if_none(void)
 	int err = 0;
 
 	if (is_regular_file(USER_ID_FILE_NAME)) {
+#if DEBUG_ENABLED
 		printf("debug: User identifier file exists already\n");
+#endif
 		return 0;
 	}
 
@@ -125,7 +127,9 @@ static int load_user_identifier(void)
 	user_identifier[sizeof(user_identifier) - 1] = '\0';
 
 	set_user_identifier(user_identifier);
+#if DEBUG_ENABLED
 	printf("debug: Did load user identifier: %s\n", user_identifier);
+#endif
 
 	fclose(id_file);
 
@@ -248,14 +252,18 @@ int main(void)
 		perror("Failed to formulate test request");
 		goto fail;
 	}
+#if DEBUG_ENABLED
 	printf("debug: constructed item data: %s\n", item_to_send.data);
+#endif
 
 	printf("Sending test data\n");
 	data_moved = BIO_write(
 			connect_bio,
 			item_to_send.data,
 			strlen(item_to_send.data));
+#if DEBUG_ENABLED
 	printf("debug: Successfully wrote %d bytes\n", data_moved);
+#endif
 
 shutdown:
 	printf("Exiting\n");

@@ -77,14 +77,18 @@ int serve_connecting_clients(BIO* accept_bio)
 		}
 
 		item_initialize(&received_item);
+#if DEBUG_ENABLED
 		printf("debug: Reading %d bytes\n", ITEM_SIZE);
+#endif
 		data_moved = BIO_read(
 				accept_bio,
 				received_item.data,
 				ITEM_SIZE);
 		item_count_unused_bytes(&received_item);
 
+#if DEBUG_ENABLED
 		printf("debug: Read %d bytes\n", data_moved);
+#endif
 		if (data_moved <= 0) {
 			// No data successfully read
 			tmp_bio = BIO_pop(accept_bio);
