@@ -8,7 +8,7 @@ int item_append(struct item* item, const char* new_data)
 	if ((item->unused_bytes - (long long) strlen(new_data)) < 0) {
 		fprintf(
 			stderr,
-			"Not enough space in item when trying to append");
+			"Not enough space in item when trying to append\n");
 		return -1;
 	}
 
