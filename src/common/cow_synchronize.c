@@ -1,42 +1,47 @@
 #include <errno.h>
-#include <semaphore.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "cow_synchronize.h"
 
 // Intended for relatively fast operations
-static sem_t semaphore_light = {0};
+static pthread_mutex_t mutex_light = PTHREAD_MUTEX_INITIALIZER;
 
+#if 0
+/*
+ * Static initialization used instead.
+ */
 int cow_locks_init(void)
 {
 	int err = 0;
 	int ret = 0;
 
-	ret = sem_init(&semaphore_light, 0, 1);
+	ret = pthread_mutex_init(&mutex_light, NULL);
 	if (0 != ret) {
 		err = errno;
 		fprintf(
 			stderr,
-			"Failed to initialize semaphore: (%d) %s\n",
+			"Failed to initialize mutex: (%d) %s\n",
 			err,
 			strerror(err));
 	}
 
 	return ret;
 }
+#endif
 
 int cow_locks_teardown(void)
 {
 	int err = 0;
 	int ret = 0;
 
-	sem_destroy(&semaphore_light);
+	ret = pthread_mutex_destroy(&mutex_light);
 	if (0 != ret) {
 		err = errno;
 		fprintf(
 			stderr,
-			"Failed to destroy semaphore: (%d) %s\n",
+			"Failed to destroy mutex: (%d) %s\n",
 			err,
 			strerror(err));
 	}
@@ -49,12 +54,12 @@ int cow_lightweight_lock_acquire(void)
 	int err = 0;
 	int ret = 0;
 
-	ret = sem_wait(&semaphore_light);
+	ret = pthread_mutex_lock(&mutex_light);
 	if (0 != ret) {
 		err = errno;
 		fprintf(
 			stderr,
-			"Failed to wait on semaphore: (%d) %s\n",
+			"Failed to lock mutex: (%d) %s\n",
 			err,
 			strerror(err));
 	}
@@ -67,12 +72,12 @@ int cow_lightweight_lock_release(void)
 	int err = 0;
 	int ret = 0;
 
-	ret = sem_post(&semaphore_light);
+	ret = pthread_mutex_unlock(&mutex_light);
 	if (0 != ret) {
 		err = errno;
 		fprintf(
 			stderr,
-			"Failed to post on semaphore: (%d) %s\n",
+			"Failed to unlock mutex: (%d) %s\n",
 			err,
 			strerror(err));
 	}
