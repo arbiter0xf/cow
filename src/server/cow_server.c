@@ -2,7 +2,7 @@
 
 #include "cow_formulate_item.h"
 #include "cow_server_config.h"
-#include "cow_server_connect.h"
+#include "cow_server_connection.h"
 #include "cow_signal.h"
 #include "cow_synchronize.h"
 
