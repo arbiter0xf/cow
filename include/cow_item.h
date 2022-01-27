@@ -3,7 +3,8 @@
 
 #define ITEM_SIZE 1024
 
-#define HEADER_TAG_REQUEST_TEST "REQUTEST"
+// 8 + '\0'
+#define HEADER_TAG_SIZE 9
 
 struct item {
 	char data[ITEM_SIZE];

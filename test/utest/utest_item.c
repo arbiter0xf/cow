@@ -1,6 +1,7 @@
 #include <criterion/criterion.h>
 
 #include "cow_item.h"
+#include "cow_item_request.h"
 
 #if 0
 cr_log_warn("message");
@@ -65,4 +66,30 @@ Test(item, cannot_add_more_than_maximum_amount_of_data_to_item)
 	cr_expect(0 != ret);
 	// Last char is '\0', so ITEM_SIZE - 1
 	cr_expect(ITEM_SIZE - 1 == strlen(test_item.data));
+}
+
+Test(item_request, item_request_fits_in_item_data)
+{
+	struct item_request item_request = {0};
+	struct item item = {0};
+
+	cr_expect(sizeof(item_request) == sizeof(item.data));
+}
+
+Test(item_request, item_request_contains_expected_header_tag)
+{
+	struct item_request item_request = {0};
+
+	fill_item_request(&item_request);
+
+	cr_expect_str_eq(item_request.header_tag, HEADER_TAG_REQUEST);
+}
+
+Test(item_request, new_item_request_test_contains_expected_header_tag)
+{
+	struct item_request request_test = {0};
+
+	fill_item_request_test(&request_test);
+
+	cr_expect_str_eq(request_test.header_tag, HEADER_TAG_REQUEST_TEST);
 }
