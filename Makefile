@@ -25,7 +25,7 @@ CFLAGS_ITEST := -DLOCAL_SERVER_CONFIG=1 -DDEBUG_ENABLED=0 -Iinclude/ -Wall
 COMPILER := gcc
 LDFLAGS_SERVER := -lssl -lcrypto -lpthread
 LDFLAGS_CLIENT := -lssl -lcrypto
-LDFLAGS_UTEST := -lpthread -lcriterion
+LDFLAGS_UTEST := -lssl -lcrypto -lcriterion
 LDFLAGS_ITEST := -lssl -lcrypto -lpthread -lcriterion
 
 EXECUTABLE_CLIENT := run_here/cow
