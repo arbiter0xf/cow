@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cow_formulate_item.h"
+#include "cow_item.h"
 
 int item_append(struct item* item, const char* new_data)
 {

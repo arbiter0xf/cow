@@ -5,7 +5,7 @@
 
 #include "cow_client.h"
 #include "cow_client_connection.h"
-#include "cow_formulate_item_request.h"
+#include "cow_item_request.h"
 
 int main(void)
 {
@@ -32,7 +32,7 @@ int main(void)
 	}
 	printf("Connected\n");
 
-	ret = formulate_item_request_test(&item_to_send);
+	ret = wrap_item_request_test(&item_to_send);
 	if (0 != ret) {
 		perror("Failed to formulate test request");
 		goto fail;

@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "cow_formulate_item.h"
+#include "cow_item.h"
 
 #if 0
 cr_log_warn("message");
@@ -13,7 +13,7 @@ void teardown(void) {
 
 Test(formulate_item, data_is_appended_to_item, .init = setup, .fini = teardown)
 #endif
-Test(formulate_item, data_is_appended_to_item)
+Test(item, data_is_appended_to_item)
 {
 	struct item test_item;
 	const char* test_data = "abcd1234";
@@ -28,7 +28,7 @@ Test(formulate_item, data_is_appended_to_item)
 	cr_expect_str_eq(test_item.data, test_data_result);
 }
 
-Test(formulate_item, maximum_amount_of_data_is_appended_to_item)
+Test(item, maximum_amount_of_data_is_appended_to_item)
 {
 	struct item test_item;
 	const char* test_data = "abcd1234"; // Append 8 bytes at a time
@@ -45,7 +45,7 @@ Test(formulate_item, maximum_amount_of_data_is_appended_to_item)
 	cr_expect(0 == test_item.unused_bytes);
 }
 
-Test(formulate_item, cannot_add_more_than_maximum_amount_of_data_to_item)
+Test(item, cannot_add_more_than_maximum_amount_of_data_to_item)
 {
 	struct item test_item;
 	const char* test_data = "abcd1234"; // Append 8 bytes at a time

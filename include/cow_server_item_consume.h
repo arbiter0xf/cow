@@ -1,7 +1,7 @@
 #ifndef COW_SERVER_ITEM_CONSUME_H_DEFINED
 #define COW_SERVER_ITEM_CONSUME_H_DEFINED
 
-#include "cow_formulate_item.h"
+#include "cow_item.h"
 
 /*
  * Returns an item to send as reply, if any.

@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "cow_formulate_item_request.h"
+#include "cow_item_request.h"
 #include "cow_user_identifier.h"
 
-static int formulate_item_request(struct item* item)
+static int wrap_item_request(struct item* item)
 {
 	int ret = 0;
 	char user_identifier[USER_IDENTIFIER_SIZE] = {0};
@@ -20,14 +20,14 @@ static int formulate_item_request(struct item* item)
 	return 0;
 }
 
-int formulate_item_request_test(struct item* item)
+int wrap_item_request_test(struct item* item)
 {
 	int ret = 0;
 	char* test_data = "test test";
 
-	ret = formulate_item_request(item);
+	ret = wrap_item_request(item);
 	if (0 != ret) {
-		perror("Failed to formulate item request");
+		perror("Failed to wrap item request");
 		return -1;
 	}
 

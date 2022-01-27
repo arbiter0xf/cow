@@ -1,6 +1,6 @@
 #include <openssl/err.h>
 
-#include "cow_formulate_item.h"
+#include "cow_item.h"
 #include "cow_server_config.h"
 #include "cow_server_connection.h"
 #include "cow_state.h"
