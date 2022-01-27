@@ -19,7 +19,7 @@ DEP := $(DEP_CLIENT) $(DEP_SERVER) $(DEP_COMMON)
 SRC_WITHOUT_MAIN := $(filter-out src/server/main.c,$(filter-out src/client/main.c,$(SRC)))
 
 # -MMD -> Produce header dependency files to be included below
-CFLAGS := -DLOCAL_SERVER_CONFIG=1 -DDEBUG_ENABLED=1 -MMD -Iinclude/
+CFLAGS := -DLOCAL_SERVER_CONFIG=1 -DDEBUG_ENABLED=1 -MMD -Iinclude/ -Wall
 CFLAGS_UTEST := -DLOCAL_SERVER_CONFIG=1 -DDEBUG_ENABLED=0 -Iinclude/ -Wall
 CFLAGS_ITEST := -DLOCAL_SERVER_CONFIG=1 -DDEBUG_ENABLED=0 -Iinclude/ -Wall
 COMPILER := gcc
