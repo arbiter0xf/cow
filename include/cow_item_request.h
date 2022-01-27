@@ -11,6 +11,8 @@
 #define HEADER_TAG_REQUEST "REQU"
 #define HEADER_TAG_REQUEST_TEST "REQUTEST"
 
+#define REQUEST_TEST_DATA "test test"
+
 struct item_request {
 	char header_user_identifier[USER_IDENTIFIER_SIZE];
 	char header_tag[HEADER_TAG_SIZE];

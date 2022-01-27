@@ -1,5 +1,6 @@
 #include <criterion/criterion.h>
 
+#include "cow_client.h"
 #include "cow_item.h"
 #include "cow_item_request.h"
 
@@ -76,6 +77,28 @@ Test(item_request, item_request_fits_in_item_data)
 	cr_expect(sizeof(item_request) == sizeof(item.data));
 }
 
+Test(item_request, item_request_user_identifier_is_empty_when_client_uninitialized)
+{
+	struct item_request item_request = {0};
+
+	fill_item_request(&item_request);
+
+	cr_expect_str_empty(item_request.header_user_identifier);
+}
+
+Test(item_request, item_request_user_identifier_is_not_empty_when_client_initialized)
+{
+	struct item_request item_request = {0};
+	int ret = 0;
+
+	ret = cow_client_init();
+	cr_expect(0 == ret);
+
+	fill_item_request(&item_request);
+
+	cr_expect_str_not_empty(item_request.header_user_identifier);
+}
+
 Test(item_request, item_request_contains_expected_header_tag)
 {
 	struct item_request item_request = {0};
@@ -92,4 +115,13 @@ Test(item_request, item_request_test_contains_expected_header_tag)
 	fill_item_request_test(&request_test);
 
 	cr_expect_str_eq(request_test.header_tag, HEADER_TAG_REQUEST_TEST);
+}
+
+Test(item_request, item_request_test_contains_test_data)
+{
+	struct item_request request_test = {0};
+
+	fill_item_request_test(&request_test);
+
+	cr_expect_str_eq(request_test.data, REQUEST_TEST_DATA);
 }

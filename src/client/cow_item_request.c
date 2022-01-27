@@ -32,6 +32,8 @@ void fill_item_request_test(struct item_request* item_request)
 
 	strncpy(item_request->header_tag, HEADER_TAG_REQUEST_TEST,
 			HEADER_TAG_SIZE);
+
+	strncpy(item_request->data, REQUEST_TEST_DATA, ITEM_REQUEST_DATA_SIZE);
 }
 
 static int wrap_item_request(struct item* item)
