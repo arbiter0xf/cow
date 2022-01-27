@@ -225,7 +225,13 @@ int cow_server_connection_listen_and_handle()
 		printf("debug: Read %d bytes\n", data_moved);
 #endif
 		if (data_moved <= 0) {
-			// No data successfully read
+			/*
+			 * No data successfully read.
+			 *
+			 * Did exit with code 141 when client had first
+			 * successfully connected using BIO and then proceeded
+			 * to BIO_write(), using uninitialized BIO.
+			 */
 			tmp_bio = BIO_pop(accept_bio);
 			BIO_free_all(tmp_bio);
 			continue;
