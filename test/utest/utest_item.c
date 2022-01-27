@@ -85,7 +85,7 @@ Test(item_request, item_request_contains_expected_header_tag)
 	cr_expect_str_eq(item_request.header_tag, HEADER_TAG_REQUEST);
 }
 
-Test(item_request, new_item_request_test_contains_expected_header_tag)
+Test(item_request, item_request_test_contains_expected_header_tag)
 {
 	struct item_request request_test = {0};
 
