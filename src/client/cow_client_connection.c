@@ -2,6 +2,7 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "cow_client_config.h"
 #include "cow_client_connection.h"
@@ -130,21 +131,53 @@ fail:
 	return -1;
 }
 
-void cow_client_connection_send_item(struct item* item_to_send)
+int cow_client_connection_send_item(struct item* item_to_send)
 {
 	int data_moved = 0;
+	int offset = 0;
+	int data_to_write = strlen(item_to_send->data);
 
-	printf("Sending test data\n");
-	data_moved = BIO_write(
-			s_connect_bio,
-			item_to_send->data,
-			strlen(item_to_send->data));
+	while (1) {
+		printf("Sending test data\n");
+		data_moved = BIO_write(
+				s_connect_bio,
+				&(item_to_send->data[offset]),
+				data_to_write);
 #if DEBUG_ENABLED
-	printf("debug: Successfully wrote %d bytes\n", data_moved);
+		printf("debug: Successfully wrote %d bytes\n", data_moved);
 #endif
+
+		if (data_moved <= 0) {
+			if (BIO_should_retry(s_connect_bio)) {
+				sleep(1);
+				continue;
+			}
+
+			goto fail;
+		}
+
+		offset = offset + data_moved;
+		data_to_write = data_to_write - data_moved;
+
+		if (data_to_write <= 0) {
+			break;
+		}
+	}
+
+	return 0;
+
+fail:
+	if (ERR_peek_error() == 0) { /* system call error */
+		fprintf(stderr, "Failed to send item (%d)", errno);
+	} else {
+		fprintf(stderr, "Failed to send item");
+		ERR_print_errors_fp(stderr);
+	}
+
+	return -1;
 }
 
-int cow_client_connection_teardown()
+void cow_client_connection_teardown()
 {
 	if (s_connection_up) {
 		BIO_ssl_shutdown(s_connect_bio);

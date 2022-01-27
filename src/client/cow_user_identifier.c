@@ -7,6 +7,8 @@
 
 #include "cow_user_identifier.h"
 
+#define USER_ID_BUF_LEN 20
+
 /*
  * When acting as a setter, pass_user_identifier must be 0.
  * When acting as a getter, new_user_identifier must be 0.
@@ -59,7 +61,7 @@ int create_user_identifier_if_none(void)
 {
 	BIO* bio_user_id_file = 0;
 	BIO* bio_base64 = 0;
-	char user_id_buf[20] = {0};
+	unsigned char user_id_buf[USER_ID_BUF_LEN] = {0};
 	int ret = 0;
 	int err = 0;
 
@@ -91,7 +93,7 @@ int create_user_identifier_if_none(void)
 	bio_user_id_file = BIO_new_file(USER_ID_FILE_NAME, "w");
 	BIO_push(bio_base64, bio_user_id_file);
 
-	BIO_write(bio_base64, user_id_buf, strlen(user_id_buf));
+	BIO_write(bio_base64, user_id_buf, USER_ID_BUF_LEN);
 	BIO_flush(bio_base64);
 
 	BIO_free_all(bio_base64);

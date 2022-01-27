@@ -148,3 +148,9 @@ Test(connect, listening_server_does_clean_shutdown_on_SIGINT)
 
 	cr_expect(1 == server_clean_exit);
 }
+
+#if 0
+Test(connect, listening_server_does_clean_shutdown_on_SIGINT)
+{
+}
+#endif

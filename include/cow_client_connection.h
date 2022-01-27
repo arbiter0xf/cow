@@ -4,7 +4,7 @@
 #include "cow_item.h"
 
 int cow_client_connection_setup();
-void cow_client_connection_send_item(struct item* item_to_send);
-int cow_client_connection_teardown();
+int cow_client_connection_send_item(struct item* item_to_send);
+void cow_client_connection_teardown();
 
 #endif
